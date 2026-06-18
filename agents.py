@@ -28,9 +28,27 @@ from pypdf import PdfReader
 from docx import Document as DocxDocument
 
 load_dotenv()
-client = Anthropic()
 
 MODEL = "claude-haiku-4-5-20251001"
+
+# The client is created lazily so a visitor can supply their own API key at
+# runtime (deployed app) while local runs still use the key from .env.
+_client = None
+
+
+def set_api_key(key):
+    """Set the Anthropic API key to use (e.g. a key the visitor pasted in)."""
+    global _client
+    if key:
+        _client = Anthropic(api_key=key)
+
+
+def _get_client():
+    """Return the active client, creating one from the environment if needed."""
+    global _client
+    if _client is None:
+        _client = Anthropic()  # uses ANTHROPIC_API_KEY from environment / .env
+    return _client
 
 
 # ---------- shared helpers ----------
@@ -47,7 +65,7 @@ def extract_json(text):
 
 def _ask(system_prompt, user_content, max_tokens=900):
     """One model call. Every agent uses this."""
-    msg = client.messages.create(
+    msg = _get_client().messages.create(
         model=MODEL,
         max_tokens=max_tokens,
         system=system_prompt,
@@ -133,15 +151,19 @@ def _plan_functional_categories(requirement):
     return json.loads(extract_json(_ask(system_prompt, f"Requirement: {requirement}", max_tokens=150)))
 
 
-def _design_cases(requirement, category):
+def _design_cases(requirement, category, context=""):
+    ctx = f"\n\nApplication context (fields, inputs, constraints):\n{context}" if context.strip() else ""
     system_prompt = (
         "You are a senior QA engineer writing test cases. Given a requirement "
         f"and the test category '{category}', write 2-3 specific test cases. "
-        "Each must have: id, title, steps (a list of strings), and "
+        "If application context (specific fields, input types, or constraints) "
+        "is provided, use those exact fields and realistic values in your steps "
+        "(e.g. test the email field with a missing @, the phone field with too "
+        "few digits). Each must have: id, title, steps (a list of strings), and "
         "expected_result. Respond with ONLY a JSON list of objects, nothing else."
     )
     return json.loads(extract_json(_ask(
-        system_prompt, f"Requirement: {requirement}\nCategory: {category}")))
+        system_prompt, f"Requirement: {requirement}\nCategory: {category}{ctx}")))
 
 
 def test_designer(requirement, emit=_noop):
@@ -160,20 +182,22 @@ def test_designer(requirement, emit=_noop):
 # AGENT 3 — Security Specialist  (dedicated security expert)
 # ============================================================
 
-def security_specialist(requirement, emit=_noop):
+def security_specialist(requirement, emit=_noop, context=""):
     """A dedicated security expert designs security-focused test cases."""
     emit("SecuritySpecialist", "working", f"Probing {requirement['id']} for security tests")
+    ctx = f"\n\nApplication context (fields, inputs, constraints):\n{context}" if context.strip() else ""
     system_prompt = (
         "You are an application security specialist. Given a requirement, write "
         "2-3 security-focused test cases that a normal QA engineer might miss — "
         "think authorization, injection, rate limiting, data exposure, token "
-        "handling, file-upload abuse, and similar. Each must have: id, title, "
-        "steps (a list of strings), and expected_result. If the requirement has "
-        "no meaningful security surface, return an empty JSON array. Respond "
-        "with ONLY a JSON list, nothing else."
+        "handling, file-upload abuse, and similar. If application context "
+        "(fields, inputs, constraints) is provided, target those specific fields. "
+        "Each must have: id, title, steps (a list of strings), and expected_result. "
+        "If the requirement has no meaningful security surface, return an empty "
+        "JSON array. Respond with ONLY a JSON list, nothing else."
     )
     cases = json.loads(extract_json(_ask(
-        system_prompt, f"Requirement: {requirement['statement']}")))
+        system_prompt, f"Requirement: {requirement['statement']}{ctx}")))
     for c in cases:
         c["category"] = "security"
     emit("SecuritySpecialist", "done", f"Added {len(cases)} security tests for {requirement['id']}")

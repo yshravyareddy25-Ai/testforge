@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 
 from agents import (
     read_document, requirements_analyst,
-    run_selected_suite, generate_automation, ALL_CATEGORIES,
+    run_selected_suite, generate_automation, ALL_CATEGORIES, set_api_key,
 )
 
 load_dotenv()
@@ -63,6 +63,18 @@ st.markdown(
     'to generate, the Security Specialist adds security tests, and the Review Lead checks the result.</div>',
     unsafe_allow_html=True,
 )
+
+# ---- API key: visitor supplies their own (nothing is stored or exposed) ----
+with st.expander("🔑 Anthropic API key (required to run)", expanded=False):
+    st.markdown(
+        "<div style='color:#8b97a8;font-size:.82rem;'>"
+        "This app runs on your own Anthropic API key — it's used only for this "
+        "session, never stored or sent anywhere except Anthropic. Get one at "
+        "console.anthropic.com.</div>", unsafe_allow_html=True)
+    user_key = st.text_input("API key", type="password", label_visibility="collapsed",
+                             placeholder="sk-ant-...")
+    if user_key:
+        set_api_key(user_key)
 
 AGENTS = [
     ("RequirementsAnalyst", "Requirements Analyst", "#58a6ff", "Extracts requirements"),
