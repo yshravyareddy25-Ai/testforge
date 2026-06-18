@@ -4,9 +4,7 @@
 
 TestForge combines **LLM application engineering** with **QA domain expertise**. It's not a single prompt — it's a coordinated team of specialized agents that plan, generate, and review test cases the way a real QA team would.
 
-🔗 **Live demo:** _add your Streamlit link here_
-📺 **Demo video / GIF:** _add a short screen recording here_
-
+🔗 **Live demo:** https://testforge-agents.streamlit.app/
 ---
 
 ## What makes it different
