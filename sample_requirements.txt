@@ -4,18 +4,3 @@ Version 1.2
 
 1. USER REGISTRATION
 The system shall allow new users to register using their email address and a password. Passwords must be at least 8 characters and contain at least one number and one special character. Users must verify their email via a confirmation link before the account is activated.
-
-2. USER LOGIN
-Registered users shall be able to log in using their email and password. After 5 failed login attempts, the account shall be locked for 30 minutes. The system shall provide a "Remember Me" option that keeps the user logged in for 30 days.
-
-3. PASSWORD RESET
-Users shall be able to reset their password via a link sent to their registered email. The reset link shall expire after 24 hours and be usable only once.
-
-4. PROFILE MANAGEMENT
-Users shall be able to update their profile information including name, phone number, and profile picture. Profile pictures must be JPG or PNG format and no larger than 5MB.
-
-5. TRANSACTION HISTORY
-Users shall be able to view their transaction history for the past 12 months. The system shall allow users to filter transactions by date range and export the results as a CSV file.
-
-6. NOTIFICATIONS
-The system shall send users an email notification for every successful login from a new device. Users shall be able to enable or disable these notifications in their settings.
